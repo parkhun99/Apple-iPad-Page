@@ -40,12 +40,15 @@ const searchInputEl = searchWrapEl.querySelector('input')
 const searchDelayEls = [...searchWrapEl.querySelectorAll('li')]
 
 searchStarterEl.addEventListener('click', showSearch)
-searchCloserEl.addEventListener('click', hideSearch)
+searchCloserEl.addEventListener('click', function (event) {
+  event.stopPropagation()
+  hideSearch()
+})
 searchShadowrEl.addEventListener('click', hideSearch) //배경 클릭시 검색바 숨기기 함수
 
 function showSearch() {  //클릭시 검색바 보이기 함수
   headerEl.classList.add('searching')
-  document.documentElement.classList.add('fixed') //문서의 최상위 요소
+  stopScroll()
   headerMenuEls.reverse().forEach(function (el, index) { //반대로 항목이 사라지는 모션
     el.style.transitionDelay = index * .4 / headerMenuEls.length + 's'
   })
@@ -58,7 +61,7 @@ function showSearch() {  //클릭시 검색바 보이기 함수
 }
 function hideSearch() { //클릭시 검색바 숨기기 함수
   headerEl.classList.remove('searching')
-  document.documentElement.classList.remove('fixed')
+  playScroll()
   headerMenuEls.reverse().forEach(function (el, index) { //순차적으로 항목이 사라지는 모션
     el.style.transitionDelay = index * .4 / headerMenuEls.length + 's'
   })
@@ -67,6 +70,74 @@ function hideSearch() { //클릭시 검색바 숨기기 함수
   })
   searchDelayEls.reverse() //reverse를 다시 해주는 이유 : 한 번만 처리해주면 사라질 때도 역순으로 사라지기 때문에
   searchInputEl.value = '' //검색바가 닫히면 입력된 문자 초기화 기능
+}
+function playScroll() {
+  // documentElement is <html>
+  document.documentElement.classList.remove('fixed')
+}
+function stopScroll() {
+  document.documentElement.classList.add('fixed')
+}
+
+// 헤더 메뉴 토글! [모바일]
+const menuStarterEl = document.querySelector('header .menu-starter')
+menuStarterEl.addEventListener('click', function () {
+  if (headerEl.classList.contains('menuing')) {
+    headerEl.classList.remove('menuing')
+    searchInputEl.value = ''
+    playScroll()
+  } else {
+    headerEl.classList.add('menuing')
+    stopScroll()
+  }
+})
+
+// 헤더 검색 [모바일]
+const searchTextFieldEl = document.querySelector('header .textfield')
+const searchCancelEl = document.querySelector('header .search-canceler')
+searchTextFieldEl.addEventListener('click', function () {
+  headerEl.classList.add('searching--mobile')
+  searchInputEl.focus()
+})
+searchCancelEl.addEventListener('click', function () {
+  headerEl.classList.remove('searching--mobile')
+})
+
+// 화면 크기가 달라졌을 때 검색 모드가 종료되도록 처리.
+window.addEventListener('resize', function () {
+  if (window.innerWidth <= 740) {
+    headerEl.classList.remove('searching')
+  } else {
+    headerEl.classList.remove('searching--mobile')
+  }
+})
+
+// Navigation Mobile 버전 드롭메뉴 클래스
+const navEl = document.querySelector('nav')
+const navMenuToggleEl = navEl.querySelector('.menu-toggler')
+const navMenuShadowEl = navEl.querySelector('.shadow')
+
+navMenuToggleEl.addEventListener('click', function () {
+  if (navEl.classList.contains('menuing')) { //드롭 메뉴의 유무를 판단(있을 경우)
+    hideNavMenu()
+  } else { //(없을 경우)  
+    showNavMenu()
+  }
+})
+
+// 버블링
+navEl.addEventListener('click', function (event) {
+  event.stopPropagation()
+})
+// shadow 영역 클릭 시 메뉴가 닫히는 코드
+navMenuShadowEl.addEventListener('click', hideNavMenu)
+// 드롭 메뉴가 출력됐을 때 다른 화면 클릭 시 메뉴가 닫히는 코드
+window.addEventListener('click', hideNavMenu)
+function showNavMenu() { //클릭 시 드롭메뉴 열리는 클래스
+  navEl.classList.add('menuing')
+}
+function hideNavMenu() {  //클릭 시 드롭메뉴 닫히는 클래스
+  navEl.classList.remove('menuing') 
 }
 
 // 요소의 가시성 관찰 섹션
@@ -88,7 +159,7 @@ const video = document.querySelector('.stage video')
 const playBtn = document.querySelector('.stage .controller--play')
 const pauseBtn = document.querySelector('.stage .controller--pause')
 
-playBtn.addEventListener('click', function () { //비디오 재상
+playBtn.addEventListener('click', function () { //비디오 재생
   video.play()
   playBtn.classList.add('hide') //재생 버튼 숨기기
   pauseBtn.classList.remove('hide') //일시정지 버튼 생성
@@ -142,6 +213,7 @@ navigations.forEach(function (nav) {
   mapEl.innerHTML = /*html*/ `
     <h3>
       <span class="text">${nav.title}</span>
+      <span class="icon">+</span>
     </h3>
     <ul>
       ${mapList}
@@ -153,3 +225,12 @@ navigations.forEach(function (nav) {
 
 const thisYearEl = document.querySelector('span.this-year')
 thisYearEl.textContent = new Date().getFullYear() //현재 날짜를 얻는 클래스
+
+// 모바일 버전 푸터 영역 드롭다운 클래스
+const mapEls = document.querySelectorAll('footer .navigations .map')
+mapEls.forEach(function (el) {
+  const h3El = el.querySelector('h3')
+  h3El.addEventListener('click', function () {
+    el.classList.toggle('active') //toggle : active가 없으면 메뉴 생성, 있으면 메뉴 삭제 기능(add, remove 기능 동시 수행)
+  })
+})
